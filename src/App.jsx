@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { v4 as uuidv4 } from 'uuid';
 import axios from 'axios'
 import Filter from './Components/Filter'
 import PersonForm from './Components/PersonForm'
@@ -22,6 +23,12 @@ const App = () => {
 
   const filteredPersons = newFilter.length === 0 ? persons : persons.filter((p) => p.name.includes(newFilter))
 
+  const deletePerson = (person) => {
+    PersonsService
+    .deletePerson(person.id)
+    .then(persons => setPersons(persons))
+  }
+
   const addPerson = (event) => {
     event.preventDefault()
 
@@ -31,6 +38,7 @@ const App = () => {
     }
 
     const newPerson = {
+      id: uuidv4(),
       name: newName,
       number: newNumber
     }
@@ -60,7 +68,7 @@ const App = () => {
       <Filter filter={newFilter} onChange={handleFilterChange} />
       <PersonForm onSubmit={addPerson} name={newName} onNameChange={handleNameChange} number={newNumber} onNumberChange={handleNumberChange} />
       <h2>Numbers</h2>
-      <Persons persons={filteredPersons} />
+      <Persons persons={filteredPersons} onDeletePerson = {deletePerson}/>
     </div>
   )
 }
