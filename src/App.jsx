@@ -13,10 +13,14 @@ const App = () => {
   const [newNumber, setNewNumber] = useState('')
   const [newFilter, setNewFilter] = useState('')
 
+const getAll = () => {
+  PersonsService
+  .getAll()
+  .then(persons => setPersons(persons))
+}
+
   const useEffectHook = () => {
-    PersonsService
-    .getAll()
-    .then(persons => setPersons(persons))
+    getAll()
   }
 
   useEffect(useEffectHook, [])
@@ -26,17 +30,34 @@ const App = () => {
   const deletePerson = (person) => {
     PersonsService
     .deletePerson(person.id)
-    .then(persons => setPersons(persons))
+    .then(() =>getAll())
+    .catch(error => console.error('Error deleting person:', error))
   }
 
   const addPerson = (event) => {
     event.preventDefault()
 
-   if (persons.find((p) => p.name === newName)) {
-      alert(`${newName} is already added to phonebook`)
+    const existingPerson = persons.find((p) => p.name === newName)
+
+    if (existingPerson) {
+      const confirmUpdate = window.confirm(`Are you sure you want to update ${existingPerson.name}?`)
+      if (confirmUpdate === false) {
+        return
+      }
+
+      const updatedPerson = {
+        ...existingPerson,
+        number: newNumber
+      }
+
+      PersonsService
+      .update(updatedPerson.id, updatedPerson)
+      .then(() => getAll())
+      .then(() => {
+        alert(`${updatedPerson.name}'s number has been updated.`);
+      })
       return
     }
-
     const newPerson = {
       id: uuidv4(),
       name: newName,
