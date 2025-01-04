@@ -4,7 +4,10 @@ import axios from 'axios'
 import Filter from './Components/Filter'
 import PersonForm from './Components/PersonForm'
 import Persons from './Components/Persons'
+import Notification from './Components/Notification'
+
 import PersonsService from './Services/Persons'
+
 
 const App = () => {
   const [persons, setPersons] = useState([{name: 'noName', number : 0}])
@@ -12,15 +15,12 @@ const App = () => {
   const [newName, setNewName] = useState('')
   const [newNumber, setNewNumber] = useState('')
   const [newFilter, setNewFilter] = useState('')
-
-const getAll = () => {
-  PersonsService
-  .getAll()
-  .then(persons => setPersons(persons))
-}
+  const [errorMessage, setErrorMessage] = useState('')
 
   const useEffectHook = () => {
-    getAll()
+    PersonsService
+    .getAll()
+    .then(persons => setPersons(persons))
   }
 
   useEffect(useEffectHook, [])
@@ -30,7 +30,9 @@ const getAll = () => {
   const deletePerson = (person) => {
     PersonsService
     .deletePerson(person.id)
-    .then(() =>getAll())
+    .then((deletedPerson) => {
+      setPersons(persons.filter(p => p.id !== deletedPerson.id))
+    })
     .catch(error => console.error('Error deleting person:', error))
   }
 
@@ -52,12 +54,21 @@ const getAll = () => {
 
       PersonsService
       .update(updatedPerson.id, updatedPerson)
-      .then(() => getAll())
+      .then(updatedPerson => {
+        setPersons(persons.map(person => person.id !== updatedPerson.id ? person : updatedPerson))
+      })
       .then(() => {
         alert(`${updatedPerson.name}'s number has been updated.`);
       })
+      .catch(error => {
+        setErrorMessage(`Infromation of ${updatedPerson.name} has already been removed from the server`)
+        setTimeout(() => {
+          setErrorMessage(null)
+        }, 5000)
+      })
       return
     }
+    
     const newPerson = {
       id: uuidv4(),
       name: newName,
@@ -68,7 +79,12 @@ const getAll = () => {
     .create(newPerson)  
     .then(returnedPerson => {
       setPersons(persons.concat(returnedPerson))
+      setErrorMessage(`${returnedPerson.name} was added successfuly`)
+      setTimeout(() => {
+        setErrorMessage(null)
+      }, 5000)
     })
+    .catch(error => console.error('Error adding person:', error))
   }
 
   const handleNameChange = (event) => {
@@ -86,6 +102,7 @@ const getAll = () => {
   return (
     <div>
       <h2>Phonebook</h2>
+      <Notification message={errorMessage}/>
       <Filter filter={newFilter} onChange={handleFilterChange} />
       <PersonForm onSubmit={addPerson} name={newName} onNameChange={handleNameChange} number={newNumber} onNumberChange={handleNumberChange} />
       <h2>Numbers</h2>
